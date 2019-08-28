@@ -6,17 +6,27 @@ import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.method.MovementMethod;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.google.gson.Gson;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -69,19 +79,24 @@ public class MainActivity extends AppCompatActivity {
                     urlConnection.disconnect();
                 }
 
-//                publishProgress(inputFromApi);
                 return inputFromApi;
             }
 
             @Override
             protected void onPostExecute(Object o) {
                 super.onPostExecute(o);
-                textView.setText(inputFromApi);
+//                textView.setText(inputFromApi);
 
             }
         };
 
         myTask.execute();
+
+
+
+        //====================================parcing data using JSONObject=====================================
+
+
 
 
 
@@ -111,13 +126,66 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     protected void onPostExecute(Object o) {
                         super.onPostExecute(o);
-                        TextView textView1=findViewById(R.id.textView);
-                        textView1.setText(response);
+//                        TextView textView1=findViewById(R.id.textView);
+//                        textView1.setText(response);
                     }
                 };
                 taskTwo.execute();
+
+//     ==========================simple jsonobj===============
+
+                try {
+                    JSONObject jsonObject =new JSONObject(taskTwo.get().toString());
+                  JSONArray result = jsonObject.getJSONArray("results");
+                    ArrayList<Results> movies=new ArrayList<Results>();
+
+                    for (int i=0; i<result.length(); i++){
+                        Results r =new Results();
+                        JSONObject obj = result.getJSONObject(i);
+                        r.setTitle(obj.getString("title"));
+                        r.setRelease_date(obj.getString("release_date"));
+                        movies.add(r);
+                        textView.setMovementMethod(new ScrollingMovementMethod());
+                        textView.append(r.getRelease_date()+"\n");
+                        textView.append(r.getTitle()+"\n\n");
+                    }
+
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+
+       //=============================================
+
+
+//     ================= Gson==========
+
+                Gson g = new Gson();
+                try {
+                    PopularMovies pm= g.fromJson(taskTwo.get().toString(),PopularMovies.class);
+                    Results[] res= pm.getResults();
+                    for(int i=0; i<res.length;i++){
+                        TextView textView1=findViewById(R.id.textView);
+                        textView1.setMovementMethod(new ScrollingMovementMethod());
+                        textView1.append(res[i].getTitle()+"\n");
+                        textView1.append(res[i].getOriginal_language()+"\n");
+                    }
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+
+//==============================================
             }
         });
+
+
 
     }
 
